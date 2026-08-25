@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import recipes from '../data'
+import { useEffect, useState } from 'react'
 import './RecipeBrowser.css'
 
 type RecipeItem = {
@@ -23,16 +22,106 @@ type Recipe = {
   steps?: string[]
 }
 
+const DB_NAME = 'recipe-browser-db'
+const DB_VERSION = 1
+const STORE_NAME = 'recipes'
+
+function openRecipesDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION)
+
+    request.onupgradeneeded = () => {
+      const db = request.result
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' })
+      }
+    }
+
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error ?? new Error('Nie udało się otworzyć bazy IndexedDB'))
+  })
+}
+
+async function saveRecipesToStorage(recipes: Recipe[]) {
+  const db = await openRecipesDb()
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite')
+      const store = tx.objectStore(STORE_NAME)
+      const request = store.put({ id: 'recipes', value: recipes })
+
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error ?? new Error('Nie udało się zapisać danych przepisu'))
+    })
+  } finally {
+    db.close()
+  }
+}
+
+async function loadRecipesFromStorage(): Promise<Recipe[]> {
+  const db = await openRecipesDb()
+
+  try {
+    return await new Promise<Recipe[]>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly')
+      const store = tx.objectStore(STORE_NAME)
+      const request = store.get('recipes')
+
+      request.onsuccess = () => {
+        const result = request.result
+        const recipes = Array.isArray(result?.value) ? result.value : []
+        resolve(recipes)
+      }
+
+      request.onerror = () => reject(request.error ?? new Error('Nie udało się odczytać danych przepisu'))
+    })
+  } catch (error) {
+    console.error('Nie udało się odczytać zapisanych przepisów z IndexedDB:', error)
+    return []
+  } finally {
+    db.close()
+  }
+}
+
 export default function RecipeBrowser() {
+  const [recipes, setRecipes] = useState<Recipe[]>([])
   const [selected, setSelected] = useState<Recipe | null>(null)
   const [q, setQ] = useState('')
+
+  useEffect(() => {
+    void (async () => {
+      setRecipes(await loadRecipesFromStorage())
+    })()
+  }, [])
+
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      const text = await file.text()
+      const parsed = JSON.parse(text)
+      if (Array.isArray(parsed)) {
+        await saveRecipesToStorage(parsed)
+        setRecipes(parsed)
+        setSelected(null)
+        setQ('')
+      }
+    } catch (error) {
+      console.error('Nie udało się odczytać pliku z przepisami:', error)
+      setRecipes([])
+      setSelected(null)
+      setQ('')
+    }
+  }
 
   const filtered = recipes.filter((r) =>
     (r.title || '').toLowerCase().includes(q.toLowerCase())
   )
 
   function getImageSrc(orig: string | undefined) {
-    return orig;
+    return orig
   }
 
   return (
@@ -40,6 +129,12 @@ export default function RecipeBrowser() {
       {!selected ? (
         // List view (only)
         <div className="rb-sidebar">
+          <div className="rb-upload-row">
+            <label className="rb-file-label">
+              Wczytaj plik z przepisami
+              <input type="file" accept=".json,application/json" onChange={handleFileChange} />
+            </label>
+          </div>
           <input
             className="rb-search"
             placeholder="Szukaj przepisu..."
