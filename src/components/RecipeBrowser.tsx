@@ -1,36 +1,38 @@
-import { useEffect, useState } from 'react'
-import recipesData from '../data_unique.js'
+import { useState } from 'react'
+import recipes from '../data'
 import './RecipeBrowser.css'
 
-type Recipe = any
+type RecipeItem = {
+  name?: string
+  weight?: string
+  group?: string
+}
+
+type Recipe = {
+  shortDescription?: string
+  img?: string
+  title?: string
+  preparationTime?: string
+  preparationTotalTime?: string
+  portions?: string
+  items?: RecipeItem[]
+  calories?: string | number
+  carbohydrates?: string
+  protein?: string
+  fat?: string
+  steps?: string[]
+}
 
 export default function RecipeBrowser() {
-  const [recipes, setRecipes] = useState<Recipe[]>([])
   const [selected, setSelected] = useState<Recipe | null>(null)
   const [q, setQ] = useState('')
-
-  useEffect(() => {
-    // data imported statically from data_unique.js (ES module)
-    if (Array.isArray(recipesData)) setRecipes(recipesData)
-  }, [])
 
   const filtered = recipes.filter((r) =>
     (r.title || '').toLowerCase().includes(q.toLowerCase())
   )
 
   function getImageSrc(orig: string | undefined) {
-    if (!orig) return ''
-    try {
-      // try to extract numeric id from query param
-      const m = orig.match(/[?&]id=(\d+)/)
-      if (m && m[1]) {
-        // when publicDir is `src`, assets are available under /assets
-        return `/assets/recipes/${m[1]}.jpg`
-      }
-      return orig
-    } catch (e) {
-      return orig
-    }
+    return orig;
   }
 
   return (
