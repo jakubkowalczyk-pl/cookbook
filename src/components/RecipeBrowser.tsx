@@ -131,7 +131,7 @@ export default function RecipeBrowser() {
         <div className="rb-sidebar">
           {!recipes.length && <div className="rb-upload-row">
             <label className="rb-file-label">
-              <input type="file" accept=".json,application/json" onChange={handleFileChange} />
+              <input type="file" accept=".js" onChange={handleFileChange} />
             </label>
           </div>}
           <input
