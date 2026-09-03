@@ -19,7 +19,7 @@
   max-height: none;
   overflow: visible;
 }
-.rb-search{width:100%;padding:8px;margin-bottom:8px;border:1px solid #ddd;border-radius:6px}
+.rb-search{width:100%;padding:8px;margin-bottom:8px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
 .rb-list{list-style:none;padding:0;margin:0}
 .rb-item{display:flex;gap:8px;align-items:center;padding:8px;border-radius:6px;cursor:pointer}
 .rb-item:hover{background:#fafafa}

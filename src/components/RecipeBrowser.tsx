@@ -129,12 +129,11 @@ export default function RecipeBrowser() {
       {!selected ? (
         // List view (only)
         <div className="rb-sidebar">
-          <div className="rb-upload-row">
+          {!recipes.length && <div className="rb-upload-row">
             <label className="rb-file-label">
-              Wczytaj plik z przepisami
               <input type="file" accept=".json,application/json" onChange={handleFileChange} />
             </label>
-          </div>
+          </div>}
           <input
             className="rb-search"
             placeholder="Szukaj przepisu..."
@@ -163,8 +162,9 @@ export default function RecipeBrowser() {
         <div className="rb-content">
           <article>
             <button className="rb-back" onClick={() => setSelected(null)}>
-              ← Powrót do listy
+              Powrót do listy
             </button>
+            <br/><br/>
             <h2>{selected.title}</h2>
             {selected.img && (
               <img className="rb-hero" src={getImageSrc(selected.img)} alt={selected.title} />
